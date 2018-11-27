@@ -1,0 +1,95 @@
+import socket
+import os
+import time
+import sys
+
+
+class generateRequest:
+
+    def __init__ (self):
+        self.timeStamp = 0
+        self.host = 'localhost'
+        self.Port = 9090
+        self. server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self. server_socket.connect((self.host, self.Port))
+
+    def connectToServer(self):
+        self. query = self.server_socket.send('Hi, This is client 1')
+        while True:
+            self.size = 4096*100
+            self. data = self.server_socket.recv(self.size)
+            print 'Received: ', str(self.data)
+            if self.data.find('Are you are new or a returning user?') >= 0:
+                self.userStatus()         
+            if self.data.find('Give your new Username and Password') >= 0:
+                self.Reg()
+            if self.data.find('Give your Username and Password') >= 0:
+                self.auth()
+            '''if self.data.find('You are Registered') >= 0:
+                self.askList()'''
+                
+    def askList(self):
+        self.server_socket.send('Give me the client list')
+        self.data = self.server_socket.recv(4096*100)
+        print 'List: ', self.data
+
+    def userStatus(self):
+        self.status = raw_input('Enter N for new user and R for returning user: ')
+        self.server_socket.send(str(self.status))
+        return 
+            
+    def Reg (self):
+        self. userName = raw_input('Enter your Username: ')
+        self. password = raw_input('Enter your Password: ')
+        self.userInfo = self.userName + '||||' + self.password
+        print self.userInfo
+        self.server_socket.send(self.userInfo)
+        self.data = self.server_socket.recv(4096*100)
+        print self.data
+        self.askList()
+        self.deReg(self.userName)
+        return
+
+    def auth (self):
+        self. userName = raw_input('Enter your Username: ')
+        self. password = raw_input('Enter your Password: ')
+        self.userInfo = self.userName + '||||' + self.password
+        print self.userInfo
+        self.server_socket.send(self.userInfo)
+        self.data = self.server_socket.recv(4096*100)
+        print self.data
+        while self.data.find('Invalid Username') >= 0:
+            self.auth()
+
+        while self.data.find('Bad Password') >= 0:
+            self. password = raw_input('Enter your Password Again: ')
+            self.server_socket.send(self.password)
+            self.data = self.server_socket.recv(4096*100)
+            print self.data
+            if self.data.find('Bad Password') >= 0:
+                continue
+            elif self.data.find('You are blocked') >= 0:
+                sys.exit(10)
+        if self.data.find('You are authenticated') >= 0:
+            print 'dededede'
+            self.askList()
+            self.deReg(self.userName)
+
+
+    def deReg(self, userName):
+        self.wish = raw_input('Do you want to quit? [Y/N]: ')
+        if self.wish == 'N':
+            print 'OK'
+            self.server_socket.close()
+        elif self.wish != 'Y':
+            print 'Enter a valid command'
+            self.deReg(self.userName)
+        else:            
+            self.toSend = 'Quit ' + str(self.userName)
+            self.server_socket.send(self.toSend)
+            self.server_socket.close()
+
+
+if __name__== '__main__':
+    temp = generateRequest()
+    temp.connectToServer()

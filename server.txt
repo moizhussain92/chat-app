@@ -1,0 +1,75 @@
+import socket
+import sys
+import select
+import time
+import os
+
+class mainServer:
+     global regEntry
+     regEntry = {}
+
+     def __init__ (self):
+          if os.path.isfile('PA4_logFile.txt'):
+               os.remove('PA4_logFile.txt')
+  
+          self.host = ''
+          self.port = 9090
+          self.backlog = 5
+                  
+          self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)     
+          self.s.bind((self.host,self.port))                                     
+          self.s.listen(self.backlog)
+
+     def clientConnection(self):
+          self.client_socket, address = self.s.accept()
+          self. query = self.client_socket.send('Hi, This is server\n')
+          
+          self.clientPort = address[1]
+          self.clientIp  = address[0]
+          self.Logging(self.clientPort, self.clientIp)
+
+          while True:
+              self.data = self.client_socket.recv(4096*100)             
+              print 'Received: ', repr(self.data)
+              self.reply = raw_input('Reply: ')
+              self.client_socket.sendall(self.reply)
+              if self.data.find('||||')>=0:                   
+                   self.storeInfo(self.data)
+              if self.data.find('Quit') >= 0:
+                   self.deReg(self.data)
+
+     def storeInfo(self, data):
+          self.store = self.data.split('||||',2)
+          regEntry[self.store[0]] = self.store[1]
+          self.reg = open('regEntry.txt', 'a+')
+          self.reg.write(str(regEntry))
+          self.reg.close()
+
+     def deReg(self, data):
+          self.check = self.data.split(' ',2)
+          del regEntry[self.check[1]]
+          if str(regEntry).find('{}') >= 0:
+               self.newEntry = str(regEntry).strip('{}')
+               self.new = open('regEntry.txt', 'w')
+               self.new.write(str(self.newEntry))
+               self.new.close()
+          else:
+               self.new = open('regEntry.txt', 'w')
+               self.new.write(str(regEntry))
+               self.new.close()
+               
+          return 0
+          
+          
+                    
+     def Logging(self, clientPort, clientIp):
+          self.timeStampLog = time.strftime('%c')
+          self.log = str(self.clientIp) + ' ' + str(self.clientPort)
+          self.log += ' ' + str(self.timeStampLog) + '\n'
+          self.logFile = open('PA4_logFile.txt', 'a').write(self.log)
+
+
+
+if __name__== '__main__':
+    temp = mainServer()
+    temp.clientConnection()
